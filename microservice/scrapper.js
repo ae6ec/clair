@@ -1,5 +1,4 @@
 // require('dotenv').config('../.env')
-
 const axios = require('axios');
 const puppeteer = require('puppeteer');
 const { scrapeQueue } = require('../messageQ/bull')
@@ -14,8 +13,8 @@ function baseScrape (url,selector) {
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
                 ],
-                headless: false
-            });
+                headless: true
+            })
 
             console.log("Browser launch success")
 
@@ -64,12 +63,11 @@ function baseScrape (url,selector) {
             console.log("Browser Closed successfully")
             return resolve(scrappedData);
         } catch (e) {
-            console.log(`Error occured: ${e}`)
+            console.log(`Error occured at baseScraping: ${e}`)
             return reject(e);
         }
     })
 }
-
 // TODO: Error handling
 
 
@@ -102,21 +100,28 @@ async function CallScrap( url, selector, code ){
       });
 
     console.log(`Data uploaded data to DB`)
-      console.log(response.config)
-}
+      console.log(response)}
 
 scrapeQueue.process(async job => { 
-    return await CallScrap(job.data.url, job.data.selector, job.data.fileCode); 
+    return await CallScrap(job.data.url, job.data.selector, job.data.fileCode).catch( (err) => {
+        console.log(`Error occured at scrapeQueue Process: ${err}`);
+    }); 
   });
 
+// async function testScraping (code){
+//     // console.log(`${process.env.PANTRY_ID}/basket/${code}`)
+//     const Data = await baseScrape("https://gofiasdle.io/d/JL4Uqc","div.col-sm-6.text-center.text-sm-left > a").catch(err => {
+//         console.log(`Error Occured retrieving DDL data: ${err}`)
+//     }).catch( (err) => {
+//         console.log(`Error occured at testScraping: ${err}`);
+//     })
+//     console.log(`Data: ${JSON.stringify(Data)}`)
+// }
+// testScraping("1")
 
-async function testScraping (code){
-    // console.log(`${process.env.PANTRY_ID}/basket/${code}`)
-    const Data = await baseScrape("https://gofile.io/d/JL4Uqc","div.col-sm-6.text-center.text-sm-left > a").catch(err => {
-        console.log(`Error Occured retrieving DDL data: ${err}`)
-    });
-    console.log(`Data; ${JSON.stringify(Data)}`)
-}
-// kk("1")
+process.on('uncaughtException', function(err) {
+    console.log("application Closed " + err);
+  });
+  
 
 exports.scrapeQueue = scrapeQueue;
