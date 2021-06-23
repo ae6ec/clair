@@ -1,4 +1,4 @@
-require('dotenv').config('../.env')
+// require('dotenv').config('../.env')
 
 const axios = require('axios');
 const puppeteer = require('puppeteer');
