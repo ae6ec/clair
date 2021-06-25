@@ -15,3 +15,12 @@ app.get("/api/test", async (req,res) => {
 app.use('/fetchcloud', fetchCloudRouter)
 
 app.listen(process.env.PORT || 3000, () => console.log("Clair Service Started"))
+
+process.on('uncaughtException', function(err) {
+    console.log("uncaughtException application Closed " + err);
+});
+
+process.on('uncaughtRejection', function(err) {
+    console.log("uncaughtException application Closed " + err);
+    console.trace("stack trace");
+});
