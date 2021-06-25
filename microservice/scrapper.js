@@ -89,6 +89,7 @@ async function CallScrap( url, selector, code ){
     //   }).catch( err => {
     //       console.log(`Error Occured posting data to DB: ${err}`)
     //   });
+    console.log("accessing URL"+ `https://getpantry.cloud/apiv1/pantry/${process.env.PANTRY_ID}/basket/${code}`)
     const response = await axios.post(`https://getpantry.cloud/apiv1/pantry/${process.env.PANTRY_ID}/basket/${code}`, {
         filecode: code,
         fileName: code,
@@ -118,10 +119,5 @@ scrapeQueue.process(async job => {
 //     console.log(`Data: ${JSON.stringify(Data)}`)
 // }
 // testScraping("1")
-
-process.on('uncaughtException', function(err) {
-    console.log("application Closed " + err);
-  });
-  
 
 exports.scrapeQueue = scrapeQueue;
