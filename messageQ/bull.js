@@ -1,9 +1,11 @@
+// require('dotenv').config()
 const Queue = require('bull');
 
 const scrapeQueue = new Queue('scrape', {
     redis: {
-      host: '127.0.0.1',
-      port: 6379
+      host: process.env.REDIS_SARSWATI_HOST,
+      port: process.env.REDIS_SARSWATI_PORT,
+      password: process.env.REDIS_SARSWATI_PASSWORD
     }
   });
 

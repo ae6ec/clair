@@ -70,8 +70,7 @@ function baseScrape (url,selector) {
 }
 // TODO: Error handling
 
-
-async function CallScrap( url, selector, code ){
+async function CallScrap( url, selector, code, fileName ){
     //TODO: workaround fix later
     //Skipping Scrapping and sending normal Download link instead
     // const Data = await baseScrape(url,selector).catch(err => {
@@ -92,7 +91,7 @@ async function CallScrap( url, selector, code ){
     console.log("accessing URL"+ `https://getpantry.cloud/apiv1/pantry/${process.env.PANTRY_ID}/basket/${code}`)
     const response = await axios.post(`https://getpantry.cloud/apiv1/pantry/${process.env.PANTRY_ID}/basket/${code}`, {
         filecode: code,
-        fileName: code,
+        fileName: fileName,
         fileDownload: url,
         status: 'Success',
         statusInfo: "Direct Download Link successfully Fetched"
@@ -104,7 +103,7 @@ async function CallScrap( url, selector, code ){
       console.log(response)}
 
 scrapeQueue.process(async job => { 
-    return await CallScrap(job.data.url, job.data.selector, job.data.fileCode).catch( (err) => {
+    return await CallScrap(job.data.url, job.data.selector, job.data.fileCode, job.data.fileName).catch( (err) => {
         console.log(`Error occured at scrapeQueue Process: ${err}`);
     }); 
   });
