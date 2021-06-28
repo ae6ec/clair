@@ -1,8 +1,18 @@
 // require('dotenv').config('../.env')
+const firebaseConfig = require('../config/firebase')
 const axios = require('axios');
 const puppeteer = require('puppeteer');
 const { scrapeQueue } = require('../messageQ/bull')
 
+import firebase from 'firebase/app';
+import 'firebase/firestone';
+
+import { useCollectionData } from 'react-firebase-hooks/firestore'; 
+
+
+firebase.initializeApp( firebaseConfig );
+
+const firestone = firebase.firestore();  
 
 function baseScrape (url,selector) {
     return new Promise(async (resolve, reject) => {
