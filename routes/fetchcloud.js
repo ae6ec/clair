@@ -5,10 +5,9 @@ const crypto = require("crypto");
 
 const { scrapeQueue } = require('../microservice/scrapper')
 
-// TODO: add multiple css select feature  with type
+// TODO: add multiple css select feature with type
 
-// TODO: current workaround since redis does not run on heroku
-// Possible fix: could be docker redis   
+// TODO: docker redis
 
 router.post('/', async (request,response) => {
     const randfilecode = crypto.randomBytes(3).toString('hex');

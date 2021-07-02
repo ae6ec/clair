@@ -1,18 +1,17 @@
-// require('dotenv').config('../.env')
-const firebaseConfig = require('../config/firebase')
-const axios = require('axios');
+// require('dotenv').config()
+
 const puppeteer = require('puppeteer');
 const { scrapeQueue } = require('../messageQ/bull')
 
-import firebase from 'firebase/app';
-import 'firebase/firestone';
+const fs = require('firebase-admin')
+const serviceAccount = process.env.FIREBASE_AUTH_CONFIG_BASE64
 
-import { useCollectionData } from 'react-firebase-hooks/firestore'; 
+fs.initializeApp({
+    credential: fs.credential.cert(JSON.parse(Buffer.from(serviceAccount, 'base64').toString('ascii'))),
+    databaseURL: process.env.FIREBASE_DATABASEURL
+});
 
-
-firebase.initializeApp( firebaseConfig );
-
-const firestone = firebase.firestore();  
+const db = fs.firestore();
 
 function baseScrape (url,selector) {
     return new Promise(async (resolve, reject) => {
@@ -26,8 +25,7 @@ function baseScrape (url,selector) {
                 headless: true
             })
 
-            console.log("Browser launch success")
-
+            console.log("Browser launched")
             const page = await browser.newPage();
             page.setCacheEnabled(true);
 
@@ -50,21 +48,19 @@ function baseScrape (url,selector) {
             console.log(`${url} opened`)
 
             console.log(`Waiting for Selector ${selector} to load`)
-            // await page.waitForSelector(selector);
-            // console.log(`Selector ${selector} loaded`);
-            await page.setDefaultTimeout(3000000)         
-            // await page.waitForNavigation({waitUntil: 'networkidle2'});
+            await page.waitForSelector(selector);
+            console.log(`Selector ${selector} loaded`);
 
             let scrappedData = await page.evaluate(selector => {
                 let results=[]
                 document.querySelectorAll(selector).forEach((item) => {
                     results.push({
                         url:  item.getAttribute('href'),
-                        text: item.innerText,
+                        fileName: item.innerText,
                     });
-                }, selector);
+                })
                 return results;
-            });
+            }, selector);
 
             console.log(`Scrapping Successful. Scrapped Data `)
             console.log(scrappedData)
@@ -78,39 +74,32 @@ function baseScrape (url,selector) {
         }
     })
 }
-// TODO: Error handling
 
-async function CallScrap( url, selector, code, fileName ){
-    //TODO: workaround fix later
-    //Skipping Scrapping and sending normal Download link instead
-    // const Data = await baseScrape(url,selector).catch(err => {
-    //     console.log(`Error Occured retrieving DDL data: ${err}`)
-    // });
+// TODO: add error ticket with all info
+async function CallScrap( url, selector, code, fileName ){  
+      
+    //add for multiple files
+    const [{url: DDL,fileName: name}] = await baseScrape(url,selector).catch(err => {
+        console.log(`Error Occured retrieving DDL data: ${err}`)
+    });
 
-    // console.log(`Data scrapped: ${JSON.stringify(Data)}`)
-    console.log(code)
-    // const response = await axios.post(`https://getpantry.cloud/apiv1/pantry/${process.env.PANTRY_ID}/basket/${code}`, {
-    //     filecode: code,
-    //     fileName: Data[0].url.split('/').pop(),
-    //     fileDownload: Data[0].url,
-    //     status: 'Success',
-    //     statusInfo: "Direct Download Link successfully Fetched"
-    //   }).catch( err => {
-    //       console.log(`Error Occured posting data to DB: ${err}`)
-    //   });
-    console.log("accessing URL"+ `https://getpantry.cloud/apiv1/pantry/${process.env.PANTRY_ID}/basket/${code}`)
-    const response = await axios.post(`https://getpantry.cloud/apiv1/pantry/${process.env.PANTRY_ID}/basket/${code}`, {
-        filecode: code,
-        fileName: fileName,
-        fileDownload: url,
-        status: 'Success',
-        statusInfo: "Direct Download Link successfully Fetched"
-      }).catch( err => {
-          console.log(`Error Occured posting data to DB: ${err}`)
-      });
+    console.log(`Scrapped Data ${fileName}:${DDL} `)
 
-    console.log(`Data uploaded data to DB`)
-      console.log(response)}
+    try{
+        const postalDB = db.collection('postal').doc(code);
+        await postalDB.set({
+            filecode: code,
+            fileName: name,
+            fileDownload: DDL,
+            createdAt: fs.firestore.FieldValue.serverTimestamp(),
+            status: 'Success',
+            statusInfo: "DDL added Success"
+        })
+    } catch(err) {
+        console.trace(`Error stack trace : ${err}`);
+    }
+    console.log("Data Posted in DB successfully");
+}
 
 scrapeQueue.process(async job => { 
     return await CallScrap(job.data.url, job.data.selector, job.data.fileCode, job.data.fileName).catch( (err) => {
@@ -120,11 +109,9 @@ scrapeQueue.process(async job => {
 
 // async function testScraping (code){
 //     // console.log(`${process.env.PANTRY_ID}/basket/${code}`)
-//     const Data = await baseScrape("https://gofiasdle.io/d/JL4Uqc","div.col-sm-6.text-center.text-sm-left > a").catch(err => {
-//         console.log(`Error Occured retrieving DDL data: ${err}`)
-//     }).catch( (err) => {
-//         console.log(`Error occured at testScraping: ${err}`);
-//     })
+//     const Data = await baseScrape("https://gofile.io/d/JL4Uqc","div.col-sm-6.text-center.text-sm-left > a").catch(err => {
+//         console.log(`Error Occured at retrieving test DDL: ${err}`)
+//     });
 //     console.log(`Data: ${JSON.stringify(Data)}`)
 // }
 // testScraping("1")

@@ -7,12 +7,14 @@ app.use(express.json())
 app.use(cors())
 
 const fetchCloudRouter = require('./routes/fetchcloud')
+const fetchFileRouter = require('./routes/fetchfile')
 
-app.get("/api/test", async (req,res) => {
+app.get("/api/health", async (req,res) => {
     res.json({ message: "API working" })
 })
 
 app.use('/fetchcloud', fetchCloudRouter)
+app.use('/fetchfile', fetchFileRouter)
 
 app.listen(process.env.PORT || 3000, () => console.log("Clair Service Started"))
 
