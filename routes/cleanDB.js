@@ -1,12 +1,14 @@
 const express = require('express')
 const router = express.Router()
 
+const { scrapeQueue } = require('../microservice/scrapper')
+
 const fs = require('firebase-admin')
 const db = fs.firestore();
 
 router.get('/', async (request,response) => {
-    console.log(`Initiating DB cleanup ${code}`);
-
+    console.log(`Initiating DB cleanup`);
+    const now = Date.now();
     const MS_PER_HOUR = 1000 * 60 * 60 ;
     let error = "";
     try {
